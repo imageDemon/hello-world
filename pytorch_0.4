@@ -1,0 +1,113 @@
+#!/usr/bin/env python
+# _*_coding:utf-8 _*_
+#@Time    :2019/8/4 14:18
+#@Author  :milo
+#@FileName: test1.py
+import torch
+import numpy as np
+from PIL import Image
+import glob
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
+import torchvision.datasets as datasets
+import torchvision.transforms as transforms
+from torchvision.models import resnet50
+import torch.nn as nn
+import torch.optim as optim
+path = ''
+cats = glob(path+'*.jpg')
+cat_images = np.array([np.array(Image.open(cat).resize((244,244))) for cat in cats[:64]])
+cat_images = cat_images.reshape(-1,224,224,3)
+cat_tensors = torch.from_numpy(cat_images)
+cat_tensors.size()
+
+class MyData(Dataset):
+    def __init__(self):
+        self.files = glob(data_dir)
+        self.size = size
+    def __len__(self):
+        return len(self.files)
+    def __getitem__(self, item):
+        img = np.asarray(Image.open(self.files[item]).resize(self.size))
+        label = self.files[item].split('/')[-2]
+        return img,label
+
+dataloader = DataLoader(dataset, batch_size=32, shuffle=False, num_workers=1)
+#抽取num中无序的2000个数
+#shuffle = np.random.permutation(num)
+#for i in shuffle(:2000)
+#datasets.ImageFolder#加载数据集及对应标签，给出了类别列表和相应数据集索引的映射
+
+#学习率选择策略：StepLR(表示多少轮改变一次)，ReduceLROnPlateau（表示当特定指标不再变化时，学习率就会改变）
+#冻结层的权值：for param in model.feayures.parameters():param.requires_grad = False
+#修改layer1模块中的所有的dropout参数
+# for layer in model.layer1.children():
+#     if (type(layer) == nn.Dropout):
+#         layer.p = 0.2
+
+#one-hot编码
+class OnehotDict(object):
+    def __init__(self):
+        self.word2index = []
+        self.index2word = []
+        self.length = 0
+    def add_word(self,word):
+        if word not in self.index2word:
+            self.index2word.append(word)
+            self.word2index[word] = self.length + 1
+            self.length += 1
+        return self.word2index[word]
+    def __len__(self):
+        return len(self.index2word)
+    def onehot_enconded(self,word):
+        vec = np.zeros(self.length)
+        vec[self.word2index[word]] = 1
+        return vec
+data_transform = transforms.Compose([transforms.Resize((299,299)),
+                                     transforms.ToTensor(),
+                                     transforms.Normalize([0.485,0.456,0.406],[0.229,0.224,0.225])
+                                     ])
+my_resnet = resnet50(pretrained=True)
+if is_cuda:
+    my_resnet = my_resnet.cuda()
+my_resnet = nn.Sequential(*list(my_resnet.children())[:-1])
+
+#训练和验证模型
+train_loss, train_accuracy = [], []
+val_loss, val_accuracy = [], []
+is_cuda = torch.cuda.is_available()
+for epoch in range(1,10):
+    epoch_loss, epoch_accuracy = fit(epoch, model, train_data_loader, phase='training')
+    val_epoch_loss, val_epoch_accuracy = fit(epoch, model, val_data_loader, phase='validation')
+    train_loss.append(epoch_loss)
+    train_accuracy.append(epoch_accuracy)
+    val_loss.append(val_epoch_loss)
+    val_accuracy.append(val_epoch_accuracy)
+
+def fit(epoch, model, data_loader, phase='training', volatile=False):
+    if phase=='training':
+        model.train()
+    if phase=='validation':
+        model.eval()
+        volatile=True
+    running_loss = 0.0
+    running_correct = 0
+    for index, (data, label) in enumerate(data_loader):
+        if is_cuda:
+            data, label = data.cuda(), label.cuda()
+        data, label = Variable(data, volatile), Variable(label)
+        if phase -- 'training':
+            optimizer.zero_grad()
+        output = model(data)
+        loss = F.nll_loss(output, label)
+        running_loss += F.nll_loss(output, label, size_average=False).data[0]
+        preds = output.data.max(dim=1, keepdim=True)[1]
+        running_correct += preds.eq(label.data.view_as(preds)).cpu().sum()
+        if phase == 'traiining':
+            loss.backward()
+            optimizer.step()
+    loss = running_loss/len(data_loader.dataset)
+    accuracy = 100. * running_correct/len(data_loader.dataset)
+    print(f'{phase} loss is {loss:{5}.{2} and {phase} accuracy is
+    {running_correct}/{len(data_loader.dataset)}{accuracy:{10}.{4}}')
+    return loss, accuracy
