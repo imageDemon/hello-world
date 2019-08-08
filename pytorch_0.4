@@ -31,7 +31,7 @@ class MyData(Dataset):
         img = np.asarray(Image.open(self.files[item]).resize(self.size))
         label = self.files[item].split('/')[-2]
         return img,label
-
+dataset = MyData()
 dataloader = DataLoader(dataset, batch_size=32, shuffle=False, num_workers=1)
 #抽取num中无序的2000个数
 #shuffle = np.random.permutation(num)
