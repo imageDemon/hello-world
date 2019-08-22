@@ -1,0 +1,116 @@
+# -*- coding: utf-8 -*-
+# @Time    : 2019/8/19 下午2:58
+# @Author  : Mat
+# @Email   : 735678367@qq.com
+# @File    : price_data.py
+# @Software: PyCharm
+import numpy as np
+from PIL import Image
+import os
+from torch.utils.data import Dataset
+from torch.utils.data import DataLoader
+import torchvision.transforms as transforms
+import torch
+filenames = '/apps/baojie/price_data/filename'
+files = '/apps/baojie/price_data/files'
+general_data = '/apps/baojie/price_data/train_tf'
+
+train_filenames = os.path.join(filenames,'train.txt')
+validation_filenames = os.path.join(filenames, 'val.txt')
+train_filenames  = open(train_filenames, 'r')
+lines = train_filenames.readlines()
+example = lines[1].split()
+# print('a'*20)
+#print(example)
+train_labels = {}
+for i, line in enumerate(lines):
+    line = line.split()
+    name, label = line[0], line[1]
+    train_labels[name] = label
+train_filenames.close()
+print(len(train_labels))
+
+validation_filenames = open(validation_filenames, 'r')
+val_lines = validation_filenames.readlines()
+val_labels = {}
+for i, line in enumerate(val_lines):
+    line = line.split()
+    name, label = line[0], line[1]
+    val_labels[name] = label
+validation_filenames.close()
+print(len(val_labels))
+
+test_data_files = os.listdir(general_data)
+# print(len(test_data_files))
+# print(test_data_files[0])
+# print(test_data_files[0].strip().split('_')[-1])
+# print(test_data_files[0].strip().split('_')[-1].split('.jpg')[0])
+class PriceDataset(Dataset):
+    def __init__(self, filenames, class_num=12, size=(224,224), transform=None, target_transform=None):
+        self.image_files = []
+        self.image_labels = []
+        for key, value in filenames.items():
+            self.image_files.append(key)
+            self.image_labels.append(value)
+        self.size = size
+        self.transform = transform
+        self.target_transform = target_transform
+
+    def __len__(self):
+        return len(self.image_files)
+    def __getitem__(self, item):
+        img = Image.open(os.path.join(files, self.image_files[item])).convert('L')
+        if self.transform is not None:
+            img = self.transform(img)
+        label = self.image_labels[item]
+        if self.target_transform is not None:
+            label = self.target_transform(label)
+        #dic_label = [i for i in label]
+        # for i, label in enumerate(dic_label):
+        #     self.dict[label] = i
+
+        return img, label
+
+# train_transform = transforms.Compose([transforms.Resize((32,100)),
+#                                      transforms.ToTensor(),
+#                                      transforms.Normalize([0.73368645, 0.72924834, 0.6816305],[0.20084406, 0.1918785, 0.24087416])
+#                                      ])
+train_transform = transforms.Compose([transforms.Resize((32,100)),
+                                     transforms.ToTensor()
+                                     ])
+val_transform = transforms.Compose([transforms.Resize((32,100)),
+                                     transforms.ToTensor()])
+train_data = PriceDataset(filenames=train_labels, transform=train_transform)
+print(train_data.__len__())
+print(train_data.__getitem__(1))
+val_data = PriceDataset(filenames=val_labels, transform=val_transform)
+# print(val_data.__getitem__(1))
+
+train_dataloader = DataLoader(dataset=train_data,
+                              batch_size=200, shuffle=True, num_workers=12)
+val_dataloader = DataLoader(dataset=val_data,
+                            batch_size=200, shuffle=True, num_workers=12)
+
+
+# class TestData(Dataset):
+#     def __init__(self, filelist, transform=None):
+#         self.image_files = filelist
+#         self.image_labels = []
+#         self.transform = transform
+#
+#     def __len__(self):
+#         return len(self.image_files)
+#     def __getitem__(self, item):
+#         img = Image.open(os.path.join(general_data, self.image_files[item]))
+#         if self.transform is not None:
+#             img = self.transform(img)
+#         label = self.image_files[item].strip().split('_')[-1].split('.jpg')[0]
+#
+#         return img, label
+# test_transform = transforms.Compose([transforms.Resize((32,100)),
+#                                      transforms.ToTensor()])
+# test_data = TestData(filelist=test_data_files, transform=test_transform)
+# evaluation_loader = DataLoader(dataset=test_data,
+#                             batch_size=200, shuffle=False, num_workers=12)
+# print(evaluation_loader.__len__())
+# print(test_data.__getitem__(1))
